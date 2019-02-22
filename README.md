@@ -1,6 +1,6 @@
 ## Build the Docker Container
 ```bash
-docker build -t cs234-project .
+docker build -t cs234-project --build-arg QUANDL_API_KEY=<QUANDL_API_KEY> .
 ```
 
 ## Run the Docker Container and Get a Shell
