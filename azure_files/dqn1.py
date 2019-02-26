@@ -87,8 +87,8 @@ class Estimator():
         flattened = tf.contrib.layers.flatten(X)
         #fc1 = tf.contrib.layers.fully_connected(flattened, 512)
         fc1 = tf.contrib.layers.fully_connected(flattened, 512)
-        fc2 = tf.contrib.layers.fully_connected(flattened, 512)
-        fc3 = tf.contrib.layers.fully_connected(fc1, 512)
+        fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+        fc3 = tf.contrib.layers.fully_connected(fc2, 512)
         self.predictions = tf.contrib.layers.fully_connected(fc3, len(VALID_ACTIONS))
 
         # Get the predictions for the chosen actions only   ########STOP HERE#########
