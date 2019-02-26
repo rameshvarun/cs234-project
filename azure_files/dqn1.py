@@ -13,24 +13,33 @@ import random
 ### Set Quandl key
 quandl.ApiConfig.api_key = 'z4iuvThvAxQCPe9xPndR'
 ### Download Apple data from Quandl
-apple_data = quandl.get("WIKI/AAPL", start_date="2014-12-31", end_date="2015-12-31", returns="numpy")
-
+stocks = ['AAPL','MSFT', "GOOG","IBM","FB","TWTR","AMZN","HP","INTC"]
+stock_data = quandl.get_table('WIKI/PRICES', ticker = stocks, 
+                        qopts = { 'columns': ['ticker', 'close','volume'] }, 
+                        date = { 'gte': '2008-12-31', 'lte': '2016-12-31' })
+input_days = 20
+total_days = len(stock_data)
 ### We build a model to use the closing price and volumn of previous input_days number of days, to study
 ### the Q function.
-input_days = 20
-total_days = len(apple_data)
+# input_days = 20
+# total_days = len(apple_data)
 
 ### Based on apple_data and input_days, we construct a tensor containing data_size number of data points, 
 ### where each data point is the closing price and volumn of input_days consecutive days.
 ### Later we use the new matrix 'data' to train the model.
 
+# data_size = total_days - input_days
+# data = np.zeros((data_size, input_days, 2, 1))
+# for i in range(data_size):
+#     for j in range(input_days):
+#         data[i][j][0][0] = apple_data[i+j][4]
+#         data[i][j][1][0] = apple_data[i+j][5]
 data_size = total_days - input_days
 data = np.zeros((data_size, input_days, 2, 1))
 for i in range(data_size):
     for j in range(input_days):
-        data[i][j][0][0] = apple_data[i+j][4]
-        data[i][j][1][0] = apple_data[i+j][5]
-
+        data[i][j][0][0] = stock_data.iloc(0)[i+j][["close","volume"]][0]
+        data[i][j][1][0] = stock_data.iloc(0)[i+j][["close","volume"]][0]
 VALID_ACTIONS = [-1, 0, 1]
 
 class Estimator():
@@ -41,7 +50,7 @@ class Estimator():
     
     ### summaries_dir is the address to store summaries.
 
-    def __init__(self, scope="estimator", summaries_dir='/Users/francescoinsulla/OneDrive - Leland Stanford Junior University/Sophomore/Winter/CS234/FinalProj/cs234-project'):
+    def __init__(self, scope="estimator", summaries_dir='.'):
         self.scope = scope
         # Writes Tensorboard summaries to disk
         self.summary_writer = None
