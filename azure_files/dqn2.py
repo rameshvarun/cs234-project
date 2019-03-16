@@ -421,7 +421,7 @@ target_estimator = Estimator(scope="target_q")
 # Run it!
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    for t, stats in deep_q_learning(data_in, data_other,
+    for t, stats in deep_q_learning(in_data, data_other,
                                     sess,
                                     q_estimator=q_estimator,
                                     target_estimator=target_estimator,
