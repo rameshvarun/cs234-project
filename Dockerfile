@@ -8,7 +8,7 @@ RUN apt-get install -y python3-pip libatlas-base-dev python-dev gfortran \
   pkg-config libfreetype6-dev
 RUN apt-get install -y tmux zsh
 
-RUN pip3 install zipline tensorflow jupyter matplotlib
+RUN pip3 install zipline tensorflow jupyter matplotlib quandl psutil
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
