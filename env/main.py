@@ -6,19 +6,24 @@ from baselines import deepq
 import pandas as pd
 
 STOCKS = ["AAPL", "MSFT", "GOOG", "IBM", "FB", "TWTR", "AMZN", "HP", "INTC"]
-TESTING_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
-TESTING_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
+
+TRAINING_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
+TRAINING_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
+
+VALIDATE_START_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
+VALIDATE_END_DATE = pd.to_datetime("2017-12-31").tz_localize("US/Eastern")
+
+TEST_START_DATE = pd.to_datetime("2017-12-31").tz_localize("US/Eastern")
+TEST_END_DATE = pd.to_datetime("2018-12-31").tz_localize("US/Eastern")
 
 if __name__ == "__main__":
     env = gym.make(
         "StockOrder-v0",
         asset="AAPL",
-        start_date=TESTING_START_DATE,
-        end_date=TESTING_END_DATE,
+        start_date=TRAINING_START_DATE,
+        end_date=TRAINING_END_DATE,
         price_history=20,
     )
-    print(env.action_space)
-    print(env.observation_space)
     act = deepq.learn(
         env,
         network="mlp",
