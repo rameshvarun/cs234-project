@@ -6,14 +6,18 @@ RUN apt-get update
 
 RUN apt-get install -y python3-pip libatlas-base-dev python-dev gfortran \
   pkg-config libfreetype6-dev
-RUN apt-get install -y tmux zsh
+RUN apt-get install -y tmux zsh git
 
-RUN pip3 install zipline tensorflow jupyter matplotlib quandl psutil
+RUN pip3 install zipline tensorflow jupyter matplotlib quandl psutil gym black
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
 RUN QUANDL_API_KEY=$QUANDL_API_KEY zipline ingest -b quandl
+
+# Install OpenAI baselines.
+RUN git clone https://github.com/openai/baselines.git
+RUN cd baselines && pip3 install -e .
 
 EXPOSE 8888/tcp
 
