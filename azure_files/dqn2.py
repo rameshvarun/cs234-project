@@ -19,7 +19,7 @@ quandl.ApiConfig.api_key = 'z4iuvThvAxQCPe9xPndR'
 ### Download Apple data from Quandl
 stocks = ['AAPL','MSFT', "GOOG","IBM","FB","TWTR","AMZN","HP","INTC"]
 stock_data = quandl.get_table('WIKI/PRICES', ticker = stocks, 
-                        qopts = { 'columns': ['ticker', 'close','volume'] }, 
+                        qopts = { 'columns': ['ticker', 'close','volume', 'date'] }, 
                         date = { 'gte': '2008-12-31', 'lte': '2016-12-31' })
 input_days = 20
 total_days = len(stock_data)
