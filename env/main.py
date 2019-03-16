@@ -29,5 +29,5 @@ if __name__ == "__main__":
         exploration_final_eps=0.02,
         print_freq=10,
     )
-    print("Saving model to portfolio_balance.pkl")
-    act.save("cartpole_model.pkl")
+    print("Saving model to stock_order.pkl")
+    act.save("stock_order.pkl")

@@ -13,7 +13,13 @@ from queue import Queue
 
 
 def zipline_thread(
-    start_date, end_date, asset, price_history, actions_queue, observations_queue, returns_queue, episode_over_queue
+    start_date,
+    end_date,
+    asset,
+    price_history,
+    actions_queue,
+    observations_queue,
+    returns_queue,
 ):
     print("Starting Zipline thread...")
 
@@ -51,6 +57,8 @@ def zipline_thread(
         handle_data=zipline_handle_data,
         bundle="quandl",
     )
+    print("Zipline thread finished...")
+    observations_queue.put(None)
 
 
 LOWEST_ASSET_PRICE = 0
@@ -77,7 +85,6 @@ class StockOrder(gym.Env):
         self.actions_queue = Queue()
         self.observations_queue = Queue()
         self.returns_queue = Queue()
-        self.episode_over_queue = Queue()
 
         self.sim_thread = threading.Thread(
             target=zipline_thread,
@@ -89,7 +96,6 @@ class StockOrder(gym.Env):
                 "actions_queue": self.actions_queue,
                 "observations_queue": self.observations_queue,
                 "returns_queue": self.returns_queue,
-                "episode_over_queue": self.episode_over_queue,
             },
         )
         self.sim_thread.start()
@@ -99,9 +105,13 @@ class StockOrder(gym.Env):
 
     def step(self, action):
         self.actions_queue.put(action)
+
         observation = self.observations_queue.get()
-        reward = self.returns_queue.get()
-        return observation, reward, False, {}
+        if observation is None:
+            return np.zeros(shape=(self.price_history,)), 0, True, {}
+        else:
+            reward = self.returns_queue.get()
+            return observation, reward, False, {}
 
     def render(self, mode="human"):
         pass
