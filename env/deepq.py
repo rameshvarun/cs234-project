@@ -178,6 +178,7 @@ def build_q_func(network, hiddens=[10], dueling=True, layer_norm=False, **networ
 
 def learn(env,
           network="lstmnew",
+          wavelet = False,
           seed=None,
           lr=5e-4,
           total_timesteps=100000,
@@ -373,23 +374,23 @@ def learn(env,
             
             #for i in range(0, x.shape[1]):
             
-            n = x.size
-            wavelet_transform_iterations = 1
-            for j in range(0, wavelet_transform_iterations):
-                coefficients = pywt.wavedec(x, 'db2', mode='symmetric', level=None, axis=0)
-                coefficients_transformed = []
-                coefficients_transformed.append(coefficients[0])
-                for detail_coefficient in coefficients[1:]:
-                    coefficients_transformed.append(
-                        pywt.threshold(detail_coefficient, np.std(detail_coefficient), mode='garrote'))
+            if wavelet == True:
+                n = x.size
+                wavelet_transform_iterations = 1
+                for j in range(0, wavelet_transform_iterations):
+                    coefficients = pywt.wavedec(x, 'db2', mode='symmetric', level=None, axis=0)
+                    coefficients_transformed = []
+                    coefficients_transformed.append(coefficients[0])
+                    for detail_coefficient in coefficients[1:]:
+                        coefficients_transformed.append(
+                            pywt.threshold(detail_coefficient, np.std(detail_coefficient), mode='garrote'))
 
-                temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
+                    temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
 
-                new_obs[0:20] = temp_array[:n]
-            
+                    new_obs[0:20] = temp_array[:n]
             #new_obs = x
             
-            print('OBSERVATION IS:', new_obs)
+            #print('OBSERVATION IS:', new_obs)
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
             obs = new_obs

@@ -29,6 +29,7 @@ if __name__ == "__main__":
     )
     act = learn(
         env,
+        wavelet = False,
         network="lstmnew",
         lr=1e-3,
         total_timesteps=100000,
