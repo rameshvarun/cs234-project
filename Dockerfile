@@ -2,11 +2,8 @@ FROM ubuntu:18.04
 
 ARG QUANDL_API_KEY
 
-RUN apt-get update
-
-RUN apt-get install -y python3-pip libatlas-base-dev python-dev gfortran \
-  pkg-config libfreetype6-dev
-RUN apt-get install -y tmux zsh git
+RUN apt-get update && apt-get install -y python3-pip libatlas-base-dev \
+  python-dev gfortran pkg-config libfreetype6-dev tmux zsh git
 
 RUN pip3 install zipline tensorflow jupyter matplotlib quandl psutil gym black
 
