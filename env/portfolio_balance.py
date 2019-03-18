@@ -121,7 +121,12 @@ class PortfolioBalance(gym.Env):
 
         observation = self.observations_queue.get()
         if observation is None:
-            return np.zeros(shape=(1, self.price_history * len(self.assets))), np.array([0]), np.array([True]), {}
+            return (
+                np.zeros(shape=(1, self.price_history * len(self.assets))),
+                np.array([0.0]),
+                np.array([True]),
+                {},
+            )
         else:
             reward = self.returns_queue.get()
             return np.array([observation]), np.array([reward]), np.array([False]), {}
