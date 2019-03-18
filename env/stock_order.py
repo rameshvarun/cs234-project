@@ -30,8 +30,8 @@ def zipline_thread(
         if context.previous_value != None:
             ret = context.portfolio.portfolio_value - context.previous_value
             returns_queue.put(ret)
-        else:
-            context.previous_value = context.portfolio.portfolio_value
+
+        context.previous_value = context.portfolio.portfolio_value
 
         history = data.history(
             zipline.api.symbol(asset), "price", bar_count=price_history, frequency="1d"
