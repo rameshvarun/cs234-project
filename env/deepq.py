@@ -21,7 +21,7 @@ from baselines.deepq.models import build_q_func
 
 from tensorflow.contrib import rnn
 import tensorflow.contrib.layers as layers
-
+import pywt
 
 
 class ActWrapper(object):
@@ -360,8 +360,36 @@ def learn(env,
                 kwargs['update_param_noise_scale'] = True
             action = act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
             env_action = action
+            #print('ACTION IS:', env_action)
             reset = False
             new_obs, rew, done, _ = env.step(env_action)
+            
+            
+            x = new_obs[0:20]
+            #print('TPYE:',type(x))
+            #print('X[1]:',x[1:20])
+            #np.reshape(x, [20,1])
+            #print('shape of x is:', x.shape)
+            
+            #for i in range(0, x.shape[1]):
+            
+            n = x.size
+            wavelet_transform_iterations = 1
+            for j in range(0, wavelet_transform_iterations):
+                coefficients = pywt.wavedec(x, 'db2', mode='symmetric', level=None, axis=0)
+                coefficients_transformed = []
+                coefficients_transformed.append(coefficients[0])
+                for detail_coefficient in coefficients[1:]:
+                    coefficients_transformed.append(
+                        pywt.threshold(detail_coefficient, np.std(detail_coefficient), mode='garrote'))
+
+                temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
+
+                new_obs[0:20] = temp_array[:n]
+            
+            #new_obs = x
+            
+            print('OBSERVATION IS:', new_obs)
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
             obs = new_obs
