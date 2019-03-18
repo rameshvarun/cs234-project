@@ -10,6 +10,7 @@ import threading
 import numpy as np
 
 from queue import Queue
+from zipline.finance import commission, slippage
 
 
 def zipline_thread(
@@ -25,6 +26,8 @@ def zipline_thread(
 
     def zipline_initialize(context):
         context.previous_value = None
+        context.set_commission(commission.PerShare(cost=0.0075, min_trade_cost=1.0))
+        context.set_slippage(slippage.VolumeShareSlippage())
 
     def zipline_handle_data(context, data):
         if context.previous_value != None:
@@ -36,6 +39,7 @@ def zipline_thread(
         history = data.history(
             zipline.api.symbol(asset), "price", bar_count=price_history, frequency="1d"
         )
+        current_position = context.portfolio.positions[zipline.api.symbol(asset)].amount
         observations_queue.put(history)
 
         action = actions_queue.get()
@@ -43,9 +47,9 @@ def zipline_thread(
         if action == 0:
             pass
         elif action == 1:
-            zipline.api.order_target(zipline.api.symbol(asset), 100)
+            zipline.api.order(zipline.api.symbol(asset), 10)
         elif action == 2:
-            zipline.api.order_target(zipline.api.symbol(asset), 0)
+            zipline.api.order(zipline.api.symbol(asset), -10)
         else:
             raise f"Unknown action {action}"
 
@@ -53,7 +57,7 @@ def zipline_thread(
         start=start_date,
         end=end_date,
         initialize=zipline_initialize,
-        capital_base=10000000.0,
+        capital_base=10_000_000.0,
         handle_data=zipline_handle_data,
         bundle="quandl",
     )
@@ -62,7 +66,7 @@ def zipline_thread(
 
 
 LOWEST_ASSET_PRICE = 0
-HIGHEST_ASSET_PRICE = 200000
+HIGHEST_ASSET_PRICE = 200_000
 
 
 class StockOrder(gym.Env):
