@@ -28,7 +28,7 @@ if __name__ == "__main__":
     )
     act = learn(
         env,
-        network="mlp",
+        network="lstm",
         lr=1e-3,
         total_timesteps=100000,
         buffer_size=50000,
