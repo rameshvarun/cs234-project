@@ -51,7 +51,7 @@ def zipline_thread(
         elif action == 2:
             zipline.api.order(zipline.api.symbol(asset), -10)
         else:
-            raise f"Unknown action {action}"
+            raise ValueError(f"Unknown action {action}")
 
     zipline.run_algorithm(
         start=start_date,
