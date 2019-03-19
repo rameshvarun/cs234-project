@@ -26,6 +26,7 @@ def zipline_thread(
     actions_queue,
     observations_queue,
     returns_queue,
+    perf_queue,
 ):
     print("Starting Zipline thread...")
 
@@ -62,6 +63,9 @@ def zipline_thread(
         for asset, value in zip(assets, values[0]):
             zipline.api.order_target_value(zipline.api.symbol(asset), value)
 
+    def zipline_analyze(context, perf):
+        perf_queue.put(perf)
+
     zipline.run_algorithm(
         start=start_date,
         end=end_date,
@@ -69,22 +73,29 @@ def zipline_thread(
         capital_base=10_000_000.0,
         handle_data=zipline_handle_data,
         bundle="quandl",
+        analyze=zipline_analyze,
     )
     print("Zipline thread finished...")
     observations_queue.put(None)
+
+
+def observation_space(num_assets, price_history):
+    return spaces.Box(
+        low=np.full((price_history * num_assets), LOWEST_ASSET_PRICE),
+        high=np.full((price_history * num_assets), HIGHEST_ASSET_PRICE),
+    )
+
+
+def action_space(num_assets):
+    return spaces.Box(low=np.full(num_assets, -0.5), high=np.full(num_assets, 0.5))
 
 
 class PortfolioBalance(gym.Env):
     metadata = {"render.modes": ["human"]}
 
     def __init__(self, assets, budget, start_date, end_date, price_history):
-        self.observation_space = spaces.Box(
-            low=np.full((price_history * len(assets)), LOWEST_ASSET_PRICE),
-            high=np.full((price_history * len(assets)), HIGHEST_ASSET_PRICE),
-        )
-        self.action_space = spaces.Box(
-            low=np.full(len(assets), -0.5), high=np.full(len(assets), 0.5)
-        )
+        self.observation_space = observation_space(len(assets), price_history)
+        self.action_space = action_space(len(assets))
 
         self.start_date = start_date
         self.end_date = end_date
@@ -97,6 +108,7 @@ class PortfolioBalance(gym.Env):
         self.actions_queue = Queue()
         self.observations_queue = Queue()
         self.returns_queue = Queue()
+        self.perf_queue = Queue()
 
         self.sim_thread = threading.Thread(
             target=zipline_thread,
@@ -109,27 +121,29 @@ class PortfolioBalance(gym.Env):
                 "actions_queue": self.actions_queue,
                 "observations_queue": self.observations_queue,
                 "returns_queue": self.returns_queue,
+                "perf_queue": self.perf_queue,
             },
         )
         self.sim_thread.start()
 
         observation = self.observations_queue.get()
-        return np.array([observation])
+        return observation
 
     def step(self, action):
         self.actions_queue.put(action)
 
         observation = self.observations_queue.get()
         if observation is None:
+            self.perf = self.perf_queue.get()
             return (
-                np.zeros(shape=(1, self.price_history * len(self.assets))),
-                np.array([0.0]),
-                np.array([True]),
+                np.zeros(shape=(self.price_history * len(self.assets))),
+                0.0,
+                True,
                 {},
             )
         else:
             reward = self.returns_queue.get()
-            return np.array([observation]), np.array([reward]), np.array([False]), {}
+            return observation, reward, False, {}
 
     def render(self, mode="human"):
         pass
