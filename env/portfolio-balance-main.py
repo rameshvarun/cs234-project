@@ -36,7 +36,7 @@ STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC"]
 NUM_STOCKS = 5
 PRICE_HISTORY = 20
 
-TRAIN_EPISODES = 10
+TRAIN_EPISODES = 1
 
 TRAINING_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
 TRAINING_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
@@ -47,11 +47,14 @@ VALIDATE_END_DATE = pd.to_datetime("2017-12-31").tz_localize("US/Eastern")
 TEST_START_DATE = pd.to_datetime("2017-12-31").tz_localize("US/Eastern")
 TEST_END_DATE = pd.to_datetime("2018-12-31").tz_localize("US/Eastern")
 
+BUDGET = 1000
+
 from portfolio_balance import observation_space, action_space
 
 
 def learn(
     network,
+    test=False,
     nb_epochs=None,  # with default settings, perform 1M steps total
     nb_epoch_cycles=20,
     nb_rollout_steps=100,
@@ -133,7 +136,7 @@ def learn(
             assets=assets,
             start_date=TRAINING_START_DATE,
             end_date=TRAINING_END_DATE,
-            budget=1000,
+            budget=BUDGET,
             price_history=PRICE_HISTORY,
         )
 
@@ -177,12 +180,32 @@ def learn(
                 cl, al = agent.train()
                 agent.update_target_net()
 
-        env.perf.portfolio_value.plot()
-        plt.savefig('portfolio_return.png')
+    # Test/Validate Environment
+    print(f"======= {'Test' if test else 'Validate'} Episode =======")
+    assets = random.sample(STOCKS, NUM_STOCKS)
+    env = gym.make(
+        "PortfolioBalance-v0",
+        assets=assets,
+        start_date=TEST_START_DATE if test else VALIDATE_START_DATE,
+        end_date=TEST_END_DATE if test else VALIDATE_END_DATE,
+        budget=BUDGET,
+        price_history=PRICE_HISTORY,
+    )
+
+    obs = env.reset()
+    done = False
+
+    while not done:
+        action, q, _, _ = agent.step(np.array([obs]), apply_noise=True, compute_Q=True)
+        obs, r, done, info = env.step(max_action * action)
+
+    env.perf.portfolio_value.plot()
+    plt.title(f"PortfolioBalanceEnvironment Portfolio Value ({'Test' if test else 'Validation'})")
+    plt.savefig("portfolio_return.png")
 
     return agent
 
 
 if __name__ == "__main__":
     set_global_seeds(None)
-    act = learn(network="mlp")
+    act = learn(network="mlp", test=False)
