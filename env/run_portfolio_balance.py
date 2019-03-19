@@ -1,7 +1,7 @@
 import os
 import time
 
-import portfolio_balance
+import portfoliobalance
 
 import gym
 import datetime
@@ -36,10 +36,10 @@ STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC"]
 NUM_STOCKS = 5
 PRICE_HISTORY = 20
 
-TRAIN_EPISODES = 1
+TRAIN_EPISODES = 10
 
-TRAINING_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
-TRAINING_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
+TRAIN_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
+TRAIN_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
 
 VALIDATE_START_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
 VALIDATE_END_DATE = pd.to_datetime("2017-12-31").tz_localize("US/Eastern")
@@ -134,8 +134,8 @@ def learn(
         env = gym.make(
             "PortfolioBalance-v0",
             assets=assets,
-            start_date=TRAINING_START_DATE,
-            end_date=TRAINING_END_DATE,
+            start_date=TRAIN_START_DATE,
+            end_date=TRAIN_END_DATE,
             budget=BUDGET,
             price_history=PRICE_HISTORY,
         )
