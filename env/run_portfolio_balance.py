@@ -1,7 +1,7 @@
 import os
 import time
 
-import portfoliobalance
+import portfolio_balance
 
 import gym
 import datetime
