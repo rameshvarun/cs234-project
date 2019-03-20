@@ -31,12 +31,13 @@ from baselines.ddpg.noise import (
 from baselines.common import set_global_seeds
 import baselines.common.tf_util as U
 
-STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC", "GOOG"]
+STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC"]
 
 NUM_STOCKS = 5
 PRICE_HISTORY = 20
 
-TRAIN_EPISODES = 10
+TRAIN_EPISODES = 50
+TEST_EPISODES = 5
 
 TRAIN_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
 TRAIN_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
@@ -181,26 +182,39 @@ def learn(
                 agent.update_target_net()
 
     # Test/Validate Environment
-    print(f"======= {'Test' if test else 'Validate'} Episode =======")
-    assets = random.sample(STOCKS, NUM_STOCKS)
-    env = gym.make(
-        "PortfolioBalance-v0",
-        assets=assets,
-        start_date=TEST_START_DATE if test else VALIDATE_START_DATE,
-        end_date=TEST_END_DATE if test else VALIDATE_END_DATE,
-        budget=BUDGET,
-        price_history=PRICE_HISTORY,
-    )
+    portfolio, sortino, sharpe = [], [], []
+    for episode in range(TEST_EPISODES):
+        print(f"======= {'Test' if test else 'Validate'} Episode =======")
+        assets = random.sample(STOCKS, NUM_STOCKS)
+        env = gym.make(
+            "PortfolioBalance-v0",
+            assets=assets,
+            start_date=TEST_START_DATE if test else VALIDATE_START_DATE,
+            end_date=TEST_END_DATE if test else VALIDATE_END_DATE,
+            budget=BUDGET,
+            price_history=PRICE_HISTORY,
+        )
 
-    obs = env.reset()
-    done = False
+        obs = env.reset()
+        done = False
 
-    while not done:
-        action, q, _, _ = agent.step(np.array([obs]), apply_noise=True, compute_Q=True)
-        obs, r, done, info = env.step(max_action * action)
+        while not done:
+            action, q, _, _ = agent.step(np.array([obs]), apply_noise=True, compute_Q=True)
+            obs, r, done, info = env.step(max_action * action)
 
-    env.perf.portfolio_value.plot()
-    plt.title(f"PortfolioBalanceEnvironment Portfolio Value ({'Test' if test else 'Validation'})")
+        env.perf.portfolio_value.plot()
+
+        portfolio.append(env.perf.portfolio_value[-1])
+        sortino.append(env.perf.sortino[-1])
+        sharpe.append(env.perf.sharpe[-1])
+
+    print(f"Portfolio Value: {np.mean(portfolio)} +/- {np.std(portfolio)}")
+    print(f"Sortino Ratio: {np.mean(sortino)} +/- {np.std(sortino)}")
+    print(f"Sharpe Ratio: {np.mean(sharpe)} +/- {np.std(sharpe)}")
+
+    plt.xlabel("Trading Day")
+    plt.ylabel("Portfolio Value")
+
     plt.savefig("portfolio_return.png")
 
     return agent
