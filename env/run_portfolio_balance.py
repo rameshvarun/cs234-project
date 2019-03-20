@@ -31,7 +31,7 @@ from baselines.ddpg.noise import (
 from baselines.common import set_global_seeds
 import baselines.common.tf_util as U
 
-STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC"]
+STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC", "GOOG"]
 
 NUM_STOCKS = 5
 PRICE_HISTORY = 20
