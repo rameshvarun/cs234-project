@@ -1,6 +1,6 @@
 import time
 import portfolio_balance
-
+import pywt
 
 import numpy as np
 import tensorflow as tf
@@ -103,7 +103,7 @@ def lstmnew(n_units = 5, n_features = 20):
     
     def network_fn(X):
         #layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
-        print('SHAPE:', X.shape, X.shape[1], int(X.get_shape().as_list()[1]/5))
+        #print('SHAPE:', X.shape, X.shape[1], int(X.get_shape().as_list()[1]/5))
         n_features = int(X.get_shape().as_list()[1]/5)
         x = tf.split(X, n_features, 1)
         #print('Shape of X:', X.shape)
@@ -329,6 +329,29 @@ def learn(
                 )
                 new_obs, r, done, info = env.step(max_action * action)
 
+
+                if wavelet == True:
+                    for i in range(5):
+                        x = new_obs[20*(i-1):20*i]
+
+                        n = x.size
+                        wavelet_transform_iterations = 1
+                        for j in range(0, wavelet_transform_iterations):
+                            coefficients = pywt.wavedec(x, 'db2', mode='symmetric', level=None, axis=0)
+                            coefficients_transformed = []
+                            coefficients_transformed.append(coefficients[0])
+                            for detail_coefficient in coefficients[1:]:
+                                coefficients_transformed.append(
+                                    pywt.threshold(detail_coefficient, np.std(detail_coefficient), mode='garrote'))
+
+                            temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
+
+                            new_obs[20*(i-1):20*i] = temp_array[:n]
+
+                new_obs = new_obs.reshape([5,20])
+                new_obs = new_obs.transpose()
+                new_obs = new_obs.reshape([1,-1])
+                
                 # Book-keeping.
                 agent.store_transition(
                     np.array([obs]),
@@ -385,4 +408,4 @@ def learn(
           
 if __name__ == "__main__":
     set_global_seeds(None)
-    act = learn(network="lstmnew", test=False)
+    act = learn(network="lstmnew", wavelet = True, test=False)
