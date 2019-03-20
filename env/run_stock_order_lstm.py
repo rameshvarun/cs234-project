@@ -174,6 +174,7 @@ def build_q_func(network, hiddens=[10], dueling=True, layer_norm=False, **networ
 
 def learn(
     network,
+    wavelet = False,
     seed=None,
     lr=5e-4,
     total_timesteps=100_000,
@@ -334,6 +335,30 @@ def learn(
             new_obs, rew, done, _ = env.step(env_action)
             t += 1.0
 
+            x = new_obs[0:20]
+            #print('TPYE:',type(x))
+            #print('X[1]:',x[1:20])
+            #np.reshape(x, [20,1])
+            #print('shape of x is:', x.shape)
+            
+            #for i in range(0, x.shape[1]):
+            
+            if wavelet == True:
+                n = x.size
+                wavelet_transform_iterations = 1
+                for j in range(0, wavelet_transform_iterations):
+                    coefficients = pywt.wavedec(x, 'db2', mode='symmetric', level=None, axis=0)
+                    coefficients_transformed = []
+                    coefficients_transformed.append(coefficients[0])
+                    for detail_coefficient in coefficients[1:]:
+                        coefficients_transformed.append(
+                            pywt.threshold(detail_coefficient, np.std(detail_coefficient), mode='garrote'))
+
+                    temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
+
+                    new_obs[0:20] = temp_array[:n]
+                    
+
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
             obs = new_obs
@@ -396,6 +421,7 @@ if __name__ == "__main__":
     set_global_seeds(None)
     act = learn(
         network="lstmnew",
+        wavelet = True,
         lr=1e-3,
         buffer_size=50000,
         exploration_fraction=0.1,
