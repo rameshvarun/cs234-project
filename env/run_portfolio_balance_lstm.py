@@ -99,7 +99,7 @@ def mlp(num_layers=2, num_hidden=64, activation=tf.tanh, layer_norm=False):
 
 
 @register("lstmnew")
-def lstmnew(n_units = 5, n_features = 20):
+def lstmnew(n_units = 64, n_features = 20):
     
     def network_fn(X):
         #layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
