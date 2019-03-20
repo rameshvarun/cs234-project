@@ -259,7 +259,7 @@ def learn(
 
         env.perf.portfolio_value.plot()
 
-    print(f"Portfolio Balance: {np.mean(portfolio)} +/- {np.std(portfolio)}")
+    print(f"Portfolio Value: {np.mean(portfolio)} +/- {np.std(portfolio)}")
     print(f"Sortino Ratio: {np.mean(sortino)} +/- {np.std(sortino)}")
     print(f"Sharpe Ratio: {np.mean(sharpe)} +/- {np.std(sharpe)}")
 
