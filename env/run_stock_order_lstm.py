@@ -42,10 +42,10 @@ import pywt
 
 import matplotlib.pyplot as plt
 
-STOCKS = ["AAPL", "MSFT", "GOOG"]
+STOCKS = ["AAPL", "MSFT", "IBM", "AMZN", "HP", "INTC", "GOOG"]
 
 PRICE_HISTORY = 20
-TRAIN_EPISODES = 10
+TRAIN_EPISODES = 50
 
 TRAIN_START_DATE = pd.to_datetime("2008-12-31").tz_localize("US/Eastern")
 TRAIN_END_DATE = pd.to_datetime("2016-12-31").tz_localize("US/Eastern")
@@ -99,7 +99,7 @@ def mlp(num_layers=2, num_hidden=64, activation=tf.tanh, layer_norm=False):
 
 @register("lstmnew")
 def lstmnew(n_units = 32, n_features = 20):
-    
+
     def network_fn(X):
         #layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
         #print('SHAPE:', X.shape, X.shape[1], int(X.get_shape().as_list()[1]/5))
@@ -111,13 +111,13 @@ def lstmnew(n_units = 32, n_features = 20):
         lstm_cell = rnn.BasicLSTMCell(n_units)
 
         outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
-        
+
         output = outputs[-1]
 
         #output = tf.matmul(outputs[-1], layer['weights']) + layer['bias']
 
         return output
-    
+
     return network_fn
 
 def get_network_builder(name):
@@ -340,9 +340,9 @@ def learn(
             #print('X[1]:',x[1:20])
             #np.reshape(x, [20,1])
             #print('shape of x is:', x.shape)
-            
+
             #for i in range(0, x.shape[1]):
-            
+
             if wavelet == True:
                 n = x.size
                 wavelet_transform_iterations = 1
@@ -357,7 +357,7 @@ def learn(
                     temp_array = pywt.waverec(coefficients_transformed, 'db2', mode='symmetric', axis=0)
 
                     new_obs[0:20] = temp_array[:n]
-                    
+
 
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
@@ -390,29 +390,45 @@ def learn(
                 update_target()
 
     # Test/Validate Environment
-    print(f"======= {'Test' if test else 'Validate'} Episode =======")
-    asset = random.choice(STOCKS)
-    env = gym.make(
-        "StockOrder-v0",
-        asset=asset,
-        start_date=TEST_START_DATE if test else VALIDATE_START_DATE,
-        end_date=TEST_END_DATE if test else VALIDATE_END_DATE,
-        price_history=PRICE_HISTORY,
-    )
+    portfolio, sortino, sharpe = [], [], []
+    action_counts = [0, 0, 0]
+    for asset in STOCKS:
+        print(f"======= {'Test' if test else 'Validate'} {asset} Episode =======")
 
-    obs = env.reset()
-    done = False
+        env = gym.make(
+            "StockOrder-v0",
+            asset=asset,
+            start_date=TEST_START_DATE if test else VALIDATE_START_DATE,
+            end_date=TEST_END_DATE if test else VALIDATE_END_DATE,
+            price_history=PRICE_HISTORY,
+        )
 
-    while not done:
-        update_eps = exploration.value(t)
-        action = act(np.array(obs)[None], update_eps=update_eps)[0]
-        obs, r, done, info = env.step(action)
+        obs = env.reset()
+        done = False
 
-    env.perf.portfolio_value.plot()
-    plt.title(
-        f"StockOrderEnvironment Portfolio Value ({'Test' if test else 'Validation'})"
-    )
-    plt.savefig("stock_order.png")
+        while not done:
+            update_eps = exploration.value(t)
+            action = act(np.array(obs)[None], update_eps=update_eps)[0]
+            obs, r, done, info = env.step(action)
+            action_counts[action] += 1
+
+        portfolio.append(env.perf.portfolio_value[-1])
+        sortino.append(env.perf.sortino[-1])
+        sharpe.append(env.perf.sharpe[-1])
+
+        env.perf.portfolio_value.plot()
+
+    print(f"Portfolio Value: {np.mean(portfolio)} +/- {np.std(portfolio)}")
+    print(f"Sortino Ratio: {np.mean(sortino)} +/- {np.std(sortino)}")
+    print(f"Sharpe Ratio: {np.mean(sharpe)} +/- {np.std(sharpe)}")
+
+    action_counts = action_counts / np.sum(action_counts)
+    print(f"Action Proportion - STAY: {action_counts[0]}, BUY: {action_counts[1]}, SELL: {action_counts[2]}")
+
+    plt.xlabel("Trading Day")
+    plt.ylabel("Portfolio Value")
+    plt.legend(STOCKS)
+    plt.savefig("stock_order_lstm.png")
 
     return act
 
